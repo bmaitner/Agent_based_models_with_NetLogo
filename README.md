@@ -3,3 +3,5 @@
 ## Spring 2019
 
 A collection of code and lessons for agent-based modeling
+
+Please add your own folder to prevent conflicts.
