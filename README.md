@@ -4,12 +4,4 @@
 
 A collection of code and lessons for agent-based modeling
 
-This is _italic_ formatting
-
-
-
-
-
-
-
-
+Please add your own folder to prevent conflicts.
