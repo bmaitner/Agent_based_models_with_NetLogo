@@ -39,6 +39,7 @@ end
 
 to go
   ask turtles [move] ; turtles move every tick
+  plot corridor-width ; send a plot of the current corridor width to the plot window
   tick
   if ticks >= 1000
        [let final-corridor-width corridor-width
@@ -46,6 +47,10 @@ to go
 
           output-print word "Corridor width "  final-corridor-width
           ; prints the phrase "Corridor width", followed by the value final-corridor-width to an output window
+
+          export-plot "Corridor width over time" ( word "Corridor_output_for_q_"  q  ".csv" )
+          ; exports the (poorly formatted) plot output as a csv file
+
 
           stop] ; once the turtle has moved 1000 ticks it stops
 
@@ -162,7 +167,7 @@ q.number
 q.number
 0
 1
-0.42
+0.2
 .01
 1
 NIL
@@ -189,6 +194,24 @@ OUTPUT
 205
 266
 11
+
+PLOT
+6
+274
+206
+424
+Corridor width over time
+Tick
+Corridor width
+0.0
+1000.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" ""
 
 @#$#@#$#@
 #Butterfly Model ODD Description
