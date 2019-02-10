@@ -54,8 +54,10 @@ set temp gis:load-dataset "C:/Users/Brian/Desktop/Range maps/climate_data/bio_10
   ;map the gis coords to the netlogo coords
   gis:set-world-envelope  (gis:envelope-of temp)
 
-  gis:paint temp 90 ; paints the given raster layer with 0 transparency
+  gis:paint temp 90 ; paints the given raster layer with 90 percent transparency
   gis:apply-raster temp elevation ; maps the temperature variable of the raster onto the elevation variable
+  ; yes, this is dumb, but I had no internet and no elevation variable, so I made due for the purpose of the example
+
   ask patches
   [
     set used? FALSE ; sets the patch to a default value of used? = FALSE
@@ -142,7 +144,7 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
+1
 0
 1
 -180
