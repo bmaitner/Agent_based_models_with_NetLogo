@@ -1,9 +1,14 @@
-globals[q]
+globals[q temp]
 patches-own [elevation used?]
 turtles-own[start-patch]
+extensions [gis]
+
+
 
 to setup
   ca ; clears all
+  resize-world 0 149 0 149
+
   ask patches
   [
     set used? FALSE ; sets the patch to a default value of used? = FALSE
@@ -36,6 +41,47 @@ crt turtle.number
 
   set q q.number  ; sets q number (currently it is a slider bar)
 end
+
+
+to setup_global
+  ca ; clears all
+
+set temp gis:load-dataset "C:/Users/Brian/Desktop/Range maps/climate_data/bio_10m_bil/bio1.asc"
+
+  ;resize world to match raster data
+  resize-world -180 180 -60 90
+
+  ;map the gis coords to the netlogo coords
+  gis:set-world-envelope  (gis:envelope-of temp)
+
+  gis:paint temp 90 ; paints the given raster layer with 0 transparency
+  gis:apply-raster temp elevation ; maps the temperature variable of the raster onto the elevation variable
+  ask patches
+  [
+    set used? FALSE ; sets the patch to a default value of used? = FALSE
+    set pcolor scale-color green elevation -269 341  ; set the color of each patch based on its elevation
+
+  ]
+  reset-ticks ; resets the tick counter
+
+crt turtle.number
+  [
+    set size 2 ;size of the turtle
+    ;setxy 0 0  ;starting cordinates of the turtle
+
+     move-to one-of patches with [elevation >= 0 or elevation <= 0]
+
+    set shape "turtle" ; makes the turtle turtle shaped
+    pen-down ; draws a line of where the turtle goes
+    set start-patch patch-here
+    set used? TRUE
+  ]
+
+  set q q.number  ; sets q number (currently it is a slider bar)
+end
+
+
+
 
 to go
   ask turtles [move] ; turtles move every tick
@@ -83,13 +129,13 @@ to-report corridor-width
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-593
-394
+305
+51
+1006
+349
 -1
 -1
-2.5
+1.92
 1
 10
 1
@@ -99,10 +145,10 @@ GRAPHICS-WINDOW
 0
 0
 1
-0
-149
-0
-149
+-180
+180
+-60
+90
 0
 0
 1
@@ -152,7 +198,7 @@ turtle.number
 turtle.number
 0
 100
-50.0
+100.0
 1
 1
 NIL
@@ -167,7 +213,7 @@ q.number
 q.number
 0
 1
-0.2
+1.0
 .01
 1
 NIL
@@ -212,6 +258,23 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" ""
+
+BUTTON
+50
+437
+152
+470
+NIL
+setup_global
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 #Butterfly Model ODD Description
