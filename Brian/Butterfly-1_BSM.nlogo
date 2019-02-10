@@ -1,12 +1,12 @@
 globals[q]
-patches-own [elevation]
-turtles-own[]
+patches-own [elevation used?]
+turtles-own[start-patch]
 
 to setup
   ca ; clears all
   ask patches
   [
-
+    set used? FALSE ; sets the patch to a default value of used? = FALSE
   ]
   reset-ticks ; resets the tick counter
 
@@ -30,6 +30,8 @@ crt turtle.number
     setxy 85 95 ;starting cordinates of the turtle
     set shape "turtle" ; makes the turtle turtle shaped
     pen-down ; draws a line of where the turtle goes
+    set start-patch patch-here
+    set used? TRUE
   ]
 
   set q q.number  ; sets q number (currently it is a slider bar)
@@ -38,15 +40,41 @@ end
 to go
   ask turtles [move] ; turtles move every tick
   tick
-  if ticks >= 1000 [stop] ; once the turtle has moved 1000 ticks it stops
+  if ticks >= 1000
+       [let final-corridor-width corridor-width
+          ;Sets a local variable final-corridor-width that we will display at the end
+
+          output-print word "Corridor width "  final-corridor-width
+          ; prints the phrase "Corridor width", followed by the value final-corridor-width to an output window
+
+          stop] ; once the turtle has moved 1000 ticks it stops
 
 end
 
 to move
+
+  if elevation >=
+  max [elevation] of neighbors
+  [stop]
+
   ifelse random-float 1 < q  ; picks a random decimal between 1 and 0 and if it is less than q then the turtles go to a heigher elevation patch and if not the turtle move to a neighboring patch
 
   [uphill elevation]
   [move-to one-of neighbors]
+  set used? TRUE
+
+end
+
+to-report corridor-width
+
+  let total-patches-used count patches with [used? = TRUE]
+  ; sets a local variable that is the count of all patches that were used
+
+  let mean-path-dist  mean [distance start-patch] of turtles
+  ; gets the mean distance between the turtle's location and the patch they started on
+
+  report(total-patches-used / mean-path-dist) ; reports (~returns) corridor width
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -77,10 +105,10 @@ ticks
 30.0
 
 BUTTON
+17
+20
+80
 53
-102
-116
-135
 NIL
 setup
 NIL
@@ -94,10 +122,10 @@ NIL
 1
 
 BUTTON
-64
-202
-127
-235
+80
+20
+143
+53
 NIL
 go
 T
@@ -111,10 +139,10 @@ NIL
 1
 
 SLIDER
-22
-345
-194
-378
+19
+116
+191
+149
 turtle.number
 turtle.number
 0
@@ -126,25 +154,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-22
-292
-194
-325
+19
+63
+191
+96
 q.number
 q.number
 0
 1
-0.75
-.05
+0.42
+.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-60
-441
-232
-474
+22
+161
+194
+194
 noise.number
 noise.number
 0
@@ -154,6 +182,13 @@ noise.number
 1
 NIL
 HORIZONTAL
+
+OUTPUT
+12
+212
+205
+266
+11
 
 @#$#@#$#@
 #Butterfly Model ODD Description
