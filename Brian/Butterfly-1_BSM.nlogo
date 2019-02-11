@@ -42,6 +42,49 @@ crt turtle.number
   set q q.number  ; sets q number (currently it is a slider bar)
 end
 
+to setup_real
+  ca ; clears all
+  resize-world 0 149 0 149
+
+  ask patches
+  [
+    set used? FALSE ; sets the patch to a default value of used? = FALSE
+  ]
+  reset-ticks ; resets the tick counter
+
+file-open "ElevationData.txt"
+  while [not file-at-end?]
+  [let next-X file-read
+  let next-Y file-read
+  let next-elevation file-read
+    ask patch next-X next-Y [set elevation next-elevation]
+  ]
+file-close
+
+
+ask patches
+[
+
+  set pcolor scale-color green elevation 465 661  ; set the color of each patch based on its elevation
+]
+
+
+crt turtle.number
+  [
+    set size 2 ;size of the turtle
+    setxy 85 95 ;starting cordinates of the turtle
+
+    setxy (random 10 + 80  ) (random 10 + 80)
+    set shape "turtle" ; makes the turtle turtle shaped
+    pen-down ; draws a line of where the turtle goes
+    set start-patch patch-here
+    set used? TRUE
+  ]
+
+  set q q.number  ; sets q number (currently it is a slider bar)
+end
+
+
 
 to setup_global
   ca ; clears all
@@ -100,7 +143,8 @@ to go
           ; exports the (poorly formatted) plot output as a csv file
 
 
-          stop] ; once the turtle has moved 1000 ticks it stops
+          ;stop
+  ] ; once the turtle has moved 1000 ticks it stops
 
 end
 
@@ -133,8 +177,8 @@ end
 GRAPHICS-WINDOW
 305
 51
-1006
-349
+601
+348
 -1
 -1
 1.92
@@ -147,10 +191,10 @@ GRAPHICS-WINDOW
 1
 0
 1
--180
-180
--60
-90
+0
+149
+0
+149
 0
 0
 1
@@ -215,7 +259,7 @@ q.number
 q.number
 0
 1
-1.0
+0.47
 .01
 1
 NIL
@@ -268,6 +312,23 @@ BUTTON
 470
 NIL
 setup_global
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+50
+470
+152
+506
+NIL
+setup_real
 NIL
 1
 T
