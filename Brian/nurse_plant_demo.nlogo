@@ -182,7 +182,7 @@ p_survival_no_nurse
 p_survival_no_nurse
 0
 100
-100
+0
 1
 1
 NIL
@@ -194,8 +194,8 @@ PLOT
 1264
 463
 Nurse plants
-Fraction
 Time step
+Fraction
 0.0
 100.0
 0.0

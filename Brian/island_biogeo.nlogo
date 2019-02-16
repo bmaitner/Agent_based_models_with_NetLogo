@@ -29,6 +29,7 @@ let spnum 0
 
 crt nspecies_mainland [
   set speciesid (spnum + 1)
+  set size 3
   set spnum spnum + 1
   set shape "turtle"
   move-to one-of patches with [pcolor = green]
