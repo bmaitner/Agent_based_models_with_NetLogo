@@ -47,6 +47,10 @@ ask turtles with [dispersing? = TRUE] [continue_dispersing]
 
 ask turtles with [pcolor = yellow or pcolor = brown][extinct]
   
+;ask turtles [set label timeatsea] ; used to check that timeatsea was working
+
+;print mean [timeatsea] of turtles
+  
 tick
   
 end
@@ -56,7 +60,7 @@ end
 to disperse
 
 ; randomly disperse
-if random 100 <= p_dispersal [
+if random 100 < p_dispersal [
   
   
   ;clone each turtle and disperse with a random heading
@@ -66,6 +70,8 @@ if random 100 <= p_dispersal [
   set dispersing? TRUE 
   
   set heading random 366
+
+;if expect_colonizing? = true [expect_colonizing]
     
   ]
   ]; end if dispersing statement
@@ -95,6 +101,7 @@ if count (turtles with ([pcolor = mypcolor AND speciesid = myspeciesid AND pcolo
 
 end
 
+
 to extinct
 
 if random-float 100 <= p_extinction [die]
@@ -103,6 +110,21 @@ if random-float 100 <= p_extinction [die]
 
 end
 
+
+
+;to expect_colonizing
+;
+;let myspeciesid speciesid
+;
+;;expect colonization on yellow
+;let yellow_patches patches in-cone 100 .1 with [pcolor = yellow]
+;if count (turtles with [pcolor = yellow AND speciesid = myspeciesid]) = 0 AND any? yellow_patches [set label "yellow"]
+;
+;;expect colonization brown
+;let brown_patches patches in-cone 100 .1 with [pcolor = brown]
+;if count (turtles with [pcolor = brown AND speciesid = myspeciesid]) = 0 AND any? brown_patches [set label "brown"]
+;
+;end
 
 
 
@@ -254,7 +276,7 @@ p_dispersal
 p_dispersal
 0
 100
-4
+3
 1
 1
 NIL
@@ -269,7 +291,7 @@ p_extinction
 p_extinction
 0
 1
-0.2
+0
 0.01
 1
 NIL
