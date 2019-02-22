@@ -18,7 +18,7 @@ to add_seeds
   
 create-seed n_seeds [
   set color black
-  set size .5
+  set size .25
   set xcor random-xcor 
   set ycor random-ycor
   set shape "circle"] 
@@ -32,10 +32,13 @@ ask seed[ if count cactus-here > 0 [die]]
 
 ask seed [
  ifelse pcolor = yellow 
-    [ifelse random 101 >= p_survival_no_nurse  [die][ask patch-here [sprout-cactus 1 [set size 2 set age 0]]
+    [ifelse random 101 >= p_survival_no_nurse  [die][ask patch-here [sprout-cactus 1 [set size 1 set age 0 set color 62]]
       die]] ;if the patch isn't occupied with a plant, die
-    [ask patch-here [sprout-cactus 1 [set size 2]]
-      die]
+    ;[ask patch-here [sprout-cactus 1 [set size 2 set age 0 set color 62]]
+    ;  die]
+    [ifelse random 101 >= p_survival_with_nurse  [die][ask patch-here [sprout-cactus 1 [set size 1 set age 0 set color 62]]
+      die]]
+    
  ]
 
 ask cactus [
@@ -60,19 +63,19 @@ end
 
 to reproduce
 
-ask n-of round (age / 10) patches in-radius 5 [if count cactus-here = 0 AND count seed-here = 0 [sprout-seed 1 [set size .5 set color black]]]
+ask n-of round (age / 10) patches in-radius 5 [if count cactus-here = 0 AND count seed-here = 0 [sprout-seed 1 [set size .25 set color black]]]
 
 
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+199
 10
-649
-470
-16
-16
-13.0
+734
+566
+10
+10
+25.0
 1
 10
 1
@@ -82,10 +85,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-10
+10
+-10
+10
 1
 1
 1
@@ -93,10 +96,10 @@ ticks
 30.0
 
 BUTTON
-30
-31
-93
-64
+27
+42
+90
+75
 NIL
 setup
 NIL
@@ -110,25 +113,25 @@ NIL
 1
 
 SLIDER
-30
-85
-202
-118
+27
+10
+199
+43
 percent_cover
 percent_cover
 0
 100
-20
+16
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-120
-32
-183
-65
+27
+207
+90
+240
 NIL
 go
 T
@@ -142,10 +145,10 @@ NIL
 1
 
 SLIDER
-35
-149
-207
-182
+27
+75
+199
+108
 n_seeds
 n_seeds
 0
@@ -157,10 +160,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-40
-209
-132
-242
+27
+108
+119
+141
 NIL
 add_seeds
 NIL
@@ -174,25 +177,25 @@ NIL
 1
 
 SLIDER
-23
-264
-177
-297
+28
+141
+201
+174
 p_survival_no_nurse
 p_survival_no_nurse
 0
 100
-0
+1
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-678
-18
-1264
-463
+801
+10
+1387
+455
 Nurse plants
 Time step
 Fraction
@@ -206,6 +209,22 @@ true
 PENS
 "With Nurse" 1.0 0 -10899396 true "" "if count cactus > 0 [plot ((count cactus with [pcolor = green]) / (count cactus))]"
 "No Nurse" 1.0 0 -1184463 true "" "if count cactus > 0 [plot ((count cactus with [pcolor = yellow]) / (count cactus))]"
+"Percent Cover" 1.0 0 -7500403 true "" "plot (percent_cover / 100)"
+
+SLIDER
+27
+174
+201
+207
+p_survival_with_nurse
+p_survival_with_nurse
+0
+100
+100
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -218,7 +237,7 @@ Seeds (black dots) are scattered throughout the landscape.  Seeds falling on a g
 
 ## HOW TO USE IT
 
-Percent cover refers to the likelihood of patches containing a nurse plant (the green ones).
+Percent cover refers to the likelihood of patches containing a nurse plant (the green ones), and so might not be exactly equal to the actual percent cover.  Probability of survival refers to the probability of a seed surviving and developing.  We assume that all adult cacti survive until the age of 100 ticks.
 
 ## THINGS TO NOTICE
 
