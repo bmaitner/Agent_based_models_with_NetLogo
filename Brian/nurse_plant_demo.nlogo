@@ -27,7 +27,8 @@ end
 
 to go
 
-ask seed[ if count cactus-here > 0 [die]]
+ask seed[ if count cactus-here > 0 OR (count patches in-radius density_dependence WITH [count cactus-here > 0] > 0)[die]]
+
 
 
 ask seed [
@@ -129,9 +130,9 @@ HORIZONTAL
 
 BUTTON
 27
-207
+243
 90
-240
+276
 NIL
 go
 T
@@ -185,7 +186,7 @@ p_survival_no_nurse
 p_survival_no_nurse
 0
 100
-1
+2
 1
 1
 NIL
@@ -221,6 +222,21 @@ p_survival_with_nurse
 0
 100
 100
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+26
+206
+198
+239
+density_dependence
+density_dependence
+0
+10
+3
 1
 1
 NIL
