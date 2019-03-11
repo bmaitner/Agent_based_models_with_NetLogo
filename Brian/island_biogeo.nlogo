@@ -291,7 +291,7 @@ p_extinction
 p_extinction
 0
 1
-0
+0.05
 0.01
 1
 NIL
@@ -302,7 +302,7 @@ PLOT
 103
 1346
 401
-plot 1
+Species Richness Over Time
 Time
 Species richness
 0.0

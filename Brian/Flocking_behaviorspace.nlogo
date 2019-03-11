@@ -1,105 +1,119 @@
-globals
-[
-  red-count            ; population of red turtles
-  blue-count           ; population of blue turtles
-]
-
-turtles-own
-[
-  fertility            ; the whole number part of fertility
-  fertility-remainder  ; the fractional part (after the decimal point)
+turtles-own [
+  flockmates         ;; agentset of nearby turtles
+  nearest-neighbor   ;; closest one of our flockmates
 ]
 
 to setup
-  clear-output
-  setup-experiment
-end
-
-to setup-experiment
-  cp ct
-  clear-all-plots
-  reset-ticks
-  crt carrying-capacity
-  [
-    setxy random-xcor random-ycor         ; randomize turtle locations
-    ifelse who < (carrying-capacity / 2)  ; start out with equal numbers of reds and blues
-      [ set color blue ]
-      [ set color red ]
-    set size 2                            ; easier to see
-  ]
+  clear-all
+  crt population
+    [ set color yellow - 2 + random 7  ;; random shades look nice
+      set size 1.5  ;; easier to see
+      set flockmates no-turtles
+      setxy random-xcor random-ycor ]
   reset-ticks
 end
 
 to go
-  reproduce
-  grim-reaper
+  ask turtles [ flock ]
+  ;; the following line is used to make the turtles
+  ;; animate more smoothly.
+  repeat 5 [ ask turtles [ fd 0.2 ] display ]
+  ;; for greater efficiency, at the expense of smooth
+  ;; animation, substitute the following line instead:
+  ;;   ask turtles [ fd 1 ]
   tick
 end
 
-;; to enable many repetitions with same settings
-to go-experiment
-  go
-  if red-count = 0
-  [
-    output-print (word "red extinct after " ticks " generations")
-    setup-experiment
-  ]
-  if blue-count = 0
-  [
-    output-print (word "blue extinct after " ticks " generations")
-    setup-experiment
-  ]
+to flock  ;; turtle procedure
+  find-flockmates
+  if any? flockmates
+    [ find-nearest-neighbor
+      ifelse distance nearest-neighbor < minimum-separation
+        [ separate ]
+        [ align
+          cohere ] ]
 end
 
-to wander  ;; turtle procedure
-  rt random-float 30 - random-float 30
-  fd 1
+to find-flockmates  ;; turtle procedure
+  set flockmates other turtles in-radius vision
 end
 
-to reproduce
-  ask turtles
-  [
-    ifelse color = red
-    [
-      set fertility floor red-fertility
-      set fertility-remainder red-fertility - (floor red-fertility)
-    ]
-    [
-      set fertility floor blue-fertility
-      set fertility-remainder blue-fertility - (floor blue-fertility)
-    ]
-    ifelse (random-float 100) < (100 * fertility-remainder)
-      [ hatch fertility + 1 [ wander ]]
-      [ hatch fertility     [ wander ]]
-  ]
+to find-nearest-neighbor ;; turtle procedure
+  set nearest-neighbor min-one-of flockmates [distance myself]
 end
 
-;; kill turtles in excess of carrying capacity
-;; note that reds and blues have equal probability of dying
-to grim-reaper
-  let num-turtles count turtles
-  if num-turtles <= carrying-capacity
-    [ stop ]
-  let chance-to-die (num-turtles - carrying-capacity) / num-turtles
-  ask turtles
-  [
-    if random-float 1.0 < chance-to-die
-      [ die ]
-  ]
+;;; SEPARATE
+
+to separate  ;; turtle procedure
+  turn-away ([heading] of nearest-neighbor) max-separate-turn
+end
+
+;;; ALIGN
+
+to align  ;; turtle procedure
+  turn-towards average-flockmate-heading max-align-turn
+end
+
+to-report average-flockmate-heading  ;; turtle procedure
+  ;; We can't just average the heading variables here.
+  ;; For example, the average of 1 and 359 should be 0,
+  ;; not 180.  So we have to use trigonometry.
+  let x-component sum [dx] of flockmates
+  let y-component sum [dy] of flockmates
+  ifelse x-component = 0 and y-component = 0
+    [ report heading ]
+    [ report atan x-component y-component ]
+end
+
+;;; COHERE
+
+to cohere  ;; turtle procedure
+  turn-towards average-heading-towards-flockmates max-cohere-turn
+end
+
+to-report average-heading-towards-flockmates  ;; turtle procedure
+  ;; "towards myself" gives us the heading from the other turtle
+  ;; to me, but we want the heading from me to the other turtle,
+  ;; so we add 180
+  let x-component mean [sin (towards myself + 180)] of flockmates
+  let y-component mean [cos (towards myself + 180)] of flockmates
+  ifelse x-component = 0 and y-component = 0
+    [ report heading ]
+    [ report atan x-component y-component ]
+end
+
+;;; HELPER PROCEDURES
+
+to turn-towards [new-heading max-turn]  ;; turtle procedure
+  turn-at-most (subtract-headings new-heading heading) max-turn
+end
+
+to turn-away [new-heading max-turn]  ;; turtle procedure
+  turn-at-most (subtract-headings heading new-heading) max-turn
+end
+
+;; turn right by "turn" degrees (or left if "turn" is negative),
+;; but never turn more than "max-turn" degrees
+to turn-at-most [turn max-turn]  ;; turtle procedure
+  ifelse abs turn > max-turn
+    [ ifelse turn > 0
+        [ rt max-turn ]
+        [ lt max-turn ] ]
+    [ rt turn ]
 end
 
 
-; Copyright 1997 Uri Wilensky.
+; Copyright 1998 Uri Wilensky.
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-290
+250
 10
-704
-445
-50
-50
-4.0
+757
+538
+35
+35
+7.0
 1
 10
 1
@@ -109,10 +123,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--50
-50
--50
-50
+-35
+35
+-35
+35
 1
 1
 1
@@ -120,43 +134,11 @@ ticks
 30.0
 
 BUTTON
-134
-26
-255
-59
-run-experiment
-go-experiment
-T
-1
-T
-OBSERVER
+39
+93
+116
+126
 NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-10
-63
-248
-96
-carrying-capacity
-carrying-capacity
-1
-4000
-1000
-1
-1
-turtles
-HORIZONTAL
-
-BUTTON
-6
-26
-66
-59
-setup
 setup
 NIL
 1
@@ -169,11 +151,11 @@ NIL
 1
 
 BUTTON
-70
-26
-130
-59
-go
+122
+93
+203
+126
+NIL
 go
 T
 1
@@ -186,135 +168,182 @@ NIL
 1
 
 SLIDER
-13
-135
-251
-168
-red-fertility
-red-fertility
-0.0
-10.0
-2
-0.1
+9
+51
+232
+84
+population
+population
+1.0
+1000.0
+300
+1.0
 1
-children
+NIL
 HORIZONTAL
 
 SLIDER
-12
-99
-250
-132
-blue-fertility
-blue-fertility
-0.0
-10.0
-5
-0.1
-1
-children
-HORIZONTAL
-
-PLOT
 4
-226
+217
+237
+250
+max-align-turn
+max-align-turn
+0.0
+20.0
+5
+0.25
+1
+degrees
+HORIZONTAL
+
+SLIDER
+4
+251
+237
 284
-445
-Populations
-Generations
-Population
+max-cohere-turn
+max-cohere-turn
 0.0
-50.0
+20.0
+3
+0.25
+1
+degrees
+HORIZONTAL
+
+SLIDER
+4
+285
+237
+318
+max-separate-turn
+max-separate-turn
 0.0
-1200.0
-true
-true
-"set-plot-y-range 0 floor (carrying-capacity * 1.2)" ""
-PENS
-"Reds" 1.0 0 -2674135 true "" "set red-count count turtles with [ color = red ]\nplot red-count"
-"Blues" 1.0 0 -13345367 true "" "set blue-count count turtles with [ color = blue ]\nplot blue-count"
-"Total" 1.0 0 -10899396 true "" "plot count turtles"
-
-MONITOR
-67
-176
-143
-221
-# reds
-red-count
-3
+20.0
+1.5
+0.25
 1
-11
+degrees
+HORIZONTAL
 
-MONITOR
-145
-176
-222
-221
-# blues
-blue-count
+SLIDER
+9
+135
+232
+168
+vision
+vision
+0.0
+10.0
 3
+0.5
 1
-11
+patches
+HORIZONTAL
 
-OUTPUT
-290
-449
-602
-543
-12
+SLIDER
+9
+169
+232
+202
+minimum-separation
+minimum-separation
+0.0
+5.0
+1
+0.25
+1
+patches
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
 
-This is a simple model of population genetics.  There are two populations, the REDS and the BLUES. Each has settable birth rates.  The reds and blues move around and reproduce according to their birth rates.  When the carrying capacity of the terrain is exceeded, some agents die (each agent has the same chance of being selected for death) to maintain a relatively constant population.  The model allows you to explore how differential birth rates affect the ratio of reds to blues.
+This model is an attempt to mimic the flocking of birds.  (The resulting motion also resembles schools of fish.)  The flocks that appear in this model are not created or led in any way by special leader birds.  Rather, each bird is following exactly the same set of rules, from which flocks emerge.
+
+## HOW IT WORKS
+
+The birds follow three rules: "alignment", "separation", and "cohesion".
+
+"Alignment" means that a bird tends to turn so that it is moving in the same direction that nearby birds are moving.
+
+"Separation" means that a bird will turn to avoid another bird which gets too close.
+
+"Cohesion" means that a bird will move towards other nearby birds (unless another bird is too close).
+
+When two birds are too close, the "separation" rule overrides the other two, which are deactivated until the minimum separation is achieved.
+
+The three rules affect only the bird's heading.  Each bird always moves forward at the same constant speed.
 
 ## HOW TO USE IT
 
-Each pass through the GO function represents a generation in the time scale of this model.
+First, determine the number of birds you want in the simulation and set the POPULATION slider to that value.  Press SETUP to create the birds, and press GO to have them start flying around.
 
-The CARRYING-CAPACITY slider sets the carrying capacity of the terrain.  The model is initialized to have a total population of CARRYING-CAPACITY with half the population reds and half blues.
+The default settings for the sliders will produce reasonably good flocking behavior.  However, you can play with them to get variations:
 
-The RED-FERTILITY and BLUE-FERTILITY sliders sets the average number of children the reds and blues have in a generation.  For example, a fertility of 3.4 means that each parent will have three children minimum, with a 40% chance of having a fourth child.
+Three TURN-ANGLE sliders control the maximum angle a bird can turn as a result of each rule.
 
-The # BLUES and # REDS monitors display the number of reds and blues respectively.
-
-The GO button runs the model.  A running plot is also displayed of the number of reds, blues and total population (in green).
-
-The RUN-EXPERIMENT button lets you experiment with many trials at the same settings.  This button outputs the number of ticks it takes for either the reds or the blues to die out given a particular set of values for the sliders.  After each extinction occurs, the world is cleared and another run begins with the same settings.  This way you can see the variance of the number of generations until extinction.
+VISION is the distance that each bird can see 360 degrees around it.
 
 ## THINGS TO NOTICE
 
-How does differential birth rates affect the population dynamics?
+Central to the model is the observation that flocks form without a leader.
 
-Does the population with a higher birth rate always start off growing faster?
+There are no random numbers used in this model, except to position the birds initially.  The fluid, lifelike behavior of the birds is produced entirely by deterministic rules.
 
-Does the population with a lower birth rate always end up extinct?
+Also, notice that each flock is dynamic.  A flock, once together, is not guaranteed to keep all of its members.  Why do you think this is?
+
+After running the model for a while, all of the birds have approximately the same heading.  Why?
+
+Sometimes a bird breaks away from its flock.  How does this happen?  You may need to slow down the model or run it step by step in order to observe this phenomenon.
 
 ## THINGS TO TRY
 
-Try running an experiment with the same settings many times.
-Does one population always go extinct? How does the number of generations until extinction vary?
+Play with the sliders to see if you can get tighter flocks, looser flocks, fewer flocks, more flocks, more or less splitting and joining of flocks, more or less rearranging of birds within flocks, etc.
+
+You can turn off a rule entirely by setting that rule's angle slider to zero.  Is one rule by itself enough to produce at least some flocking?  What about two rules?  What's missing from the resulting behavior when you leave out each rule?
+
+Will running the model for a long time produce a static flock?  Or will the birds never settle down to an unchanging formation?  Remember, there are no random numbers used in this model.
 
 ## EXTENDING THE MODEL
 
-In this model, once the carrying capacity has been exceeded, every member of the population has an equal chance of dying. Try extending the model so that reds and blues have different saturation rates. How does the saturation rate compare with the birthrate in determining the population dynamics?
+Currently the birds can "see" all around them.  What happens if birds can only see in front of them?  The `in-cone` primitive can be used for this.
 
-In this model, the original population is set to the carrying capacity (both set to CARRYING-CAPACITY). Would population dynamics be different if these were allowed to vary independently?
+Is there some way to get V-shaped flocks, like migrating geese?
 
-In this model, reds are red and blues blue and progeny of reds are always red, progeny of blues are always blue. What if you allowed reds to sometimes have blue progeny and vice versa? How would the model dynamics be different?
+What happens if you put walls around the edges of the world that the birds can't fly into?
+
+Can you get the birds to fly around obstacles in the middle of the world?
+
+What would happen if you gave the birds different velocities?  For example, you could make birds that are not near other birds fly faster to catch up to the flock.  Or, you could simulate the diminished air resistance that birds experience when flying together by making them fly faster when in a group.
+
+Are there other interesting ways you can make the birds different from each other?  There could be random variation in the population, or you could have distinct "species" of bird.
+
+## NETLOGO FEATURES
+
+Notice the need for the `subtract-headings` primitive and special procedure for averaging groups of headings.  Just subtracting the numbers, or averaging the numbers, doesn't give you the results you'd expect, because of the discontinuity where headings wrap back to 0 once they reach 360.
+
+## RELATED MODELS
+
+* Moths
+* Flocking Vee Formation
+
+## CREDITS AND REFERENCES
+
+This model is inspired by the Boids simulation invented by Craig Reynolds.  The algorithm we use here is roughly similar to the original Boids algorithm, but it is not the same.  The exact details of the algorithm tend not to matter very much -- as long as you have alignment, separation, and cohesion, you will usually get flocking behavior resembling that produced by Reynolds' original model.  Information on Boids is available at http://www.red3d.com/cwr/boids/.
 
 
 ## HOW TO CITE
 
 If you mention this model in a publication, we ask that you include these citations for the model itself and for the NetLogo software:
 
-* Wilensky, U. (1997).  NetLogo Simple Birth Rates model.  http://ccl.northwestern.edu/netlogo/models/SimpleBirthRates.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+* Wilensky, U. (1998).  NetLogo Flocking model.  http://ccl.northwestern.edu/netlogo/models/Flocking.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
 * Wilensky, U. (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
 
 ## COPYRIGHT AND LICENSE
 
-Copyright 1997 Uri Wilensky.
+Copyright 1998 Uri Wilensky.
 
 ![CC BY-NC-SA 3.0](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)
 
@@ -324,7 +353,7 @@ Commercial licenses are also available. To inquire about commercial licenses, pl
 
 This model was created as part of the project: CONNECTED MATHEMATICS: MAKING SENSE OF COMPLEX PHENOMENA THROUGH BUILDING OBJECT-BASED PARALLEL MODELS (OBPML).  The project gratefully acknowledges the support of the National Science Foundation (Applications of Advanced Technologies Program) -- grant numbers RED #9552950 and REC #9632612.
 
-This model was converted to NetLogo as part of the projects: PARTICIPATORY SIMULATIONS: NETWORK-BASED DESIGN FOR SYSTEMS LEARNING IN CLASSROOMS and/or INTEGRATED SIMULATION AND MODELING ENVIRONMENT. The project gratefully acknowledges the support of the National Science Foundation (REPP & ROLE programs) -- grant numbers REC #9814682 and REC-0126227. Converted from StarLogoT to NetLogo, 2001.
+This model was converted to NetLogo as part of the projects: PARTICIPATORY SIMULATIONS: NETWORK-BASED DESIGN FOR SYSTEMS LEARNING IN CLASSROOMS and/or INTEGRATED SIMULATION AND MODELING ENVIRONMENT. The project gratefully acknowledges the support of the National Science Foundation (REPP & ROLE programs) -- grant numbers REC #9814682 and REC-0126227. Converted from StarLogoT to NetLogo, 2002.
 @#$#@#$#@
 default
 true
@@ -611,20 +640,37 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 5.0.5
 @#$#@#$#@
+set population 200
+setup
+repeat 200 [ go ]
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="blue_fertility_effect_on_red_extinction" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="baseline" repetitions="10" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
-    <exitCondition>red-count = 0</exitCondition>
-    <metric>ticks</metric>
-    <enumeratedValueSet variable="carrying-capacity">
-      <value value="1000"/>
+    <timeLimit steps="500"/>
+    <metric>count turtles with[any? flockmates]</metric>
+    <metric>mean [count flockmates] of turtles</metric>
+    <metric>mean [min [distance myself] of other turtles] of turtles</metric>
+    <metric>standard-deviation [heading] of turtles</metric>
+    <enumeratedValueSet variable="max-cohere-turn">
+      <value value="3"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="blue-fertility" first="2.1" step="0.1" last="5"/>
-    <enumeratedValueSet variable="red-fertility">
-      <value value="2"/>
+    <enumeratedValueSet variable="vision">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-align-turn">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minimum-separation">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population">
+      <value value="300"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-separate-turn">
+      <value value="1.5"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>

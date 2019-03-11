@@ -4,8 +4,8 @@ globals
    initial-population
    max-age
    birth-rate
-   social-network-age-range
-   social-network-angle-range
+   ;social-network-age-range
+   ;social-network-angle-range
    min-marriage-age
  ]
  
@@ -16,7 +16,10 @@ turtles-own [
   sex                     ; a string, "M" or "F"
   social-network          ; an agentset
   is-married?             ; a boolean variable, true or false
-  my-spouses-social-angle ; a float
+  ;my-spouses-social-angle ; a float
+  my-spouse ; a turtle
+  my-mother 
+  my-father
   ]  
 
 to setup
@@ -26,8 +29,8 @@ to setup
   ; Initialize global variables
   set initial-population 1000
   set max-age max-pxcor   ; Age is equal to X coordinate.
-  set social-network-age-range 3
-  set social-network-angle-range 20
+  ;set social-network-age-range 3
+  ;set social-network-angle-range 20
   set min-marriage-age 16
   set birth-rate 16
 
@@ -36,28 +39,54 @@ to setup
    [  
      ; set the age
      set xcor random (max-age + 1)
-     
-     ; set the sex
+          ; set the sex
      ifelse (random-float 1.0 < 0.5)
        [set sex "M"]
        [set sex "F"]
-     
+     set my-spouse nobody
      ; set the social angle
      set ycor random-float 360.0
      
+     set is-married? false
+     set color red
+     set my-mother nobody
+     set my-father nobody
+  
+  set-social-network
+  
+  ;   set social-network other turtles with
+   ; [ 
+   ;   xcor > ([xcor] of myself - social-network-age-range) and
+   ;   xcor < ([xcor] of myself + social-network-age-range) and
+   ;   ycor > ([ycor] of myself - social-network-angle-range) and
+   ;   ycor < ([ycor] of myself + social-network-angle-range)
+    ; ]
+     
+     setup_mary
      ; set marital status with a 10% probability of being married
-     ifelse (xcor >= min-marriage-age) and (random-float 1.0 < 0.1)
-      [
-        set is-married? true
-        set color green
-      ]
-      [
-        set is-married? false
-        set color red
-      ]
+     ;ifelse (xcor >= min-marriage-age) and (random-float 1.0 < 0.1)
+     ; [
+      ;  set is-married? true
+      ;  set color green
+      ;]
+      ;[
+       ; set is-married? false
+       ; set color red
+      ;]
 
    ]
    
+   
+   
+   
+   
+   
+    ; Marriage
+   ; First, open the test output file that is written to in "marry"
+   ;file-open "TestOutput.csv"
+   ;ask turtles [marry]
+   ;file-close
+    
   ; Clear the test output file, write column headings
   if (file-exists? "TestOutput.csv") [carefully [file-delete "TestOutput.csv"] [print error-message]]
   file-open "TestOutput.csv"
@@ -78,11 +107,12 @@ to go
    if ticks >= 200   
    [
      file-close
-     stop
+    ; stop
    ]
 
    ; Ageing and death
    ask turtles [age-and-die]
+   ask turtles [set-social-network]
    
    ; Childbirth
    reproduce
@@ -105,9 +135,22 @@ to age-and-die
 
  let new-age xcor + 1
  ifelse (new-age > 60)
-   [die]
+   [
+     
+     
+     if (my-spouse != nobody) [ask my-spouse [set my-spouse nobody set is-married? FALSE set color red]]
+     
+     
+     die]
    [set xcor new-age]
-
+;set-social-network
+;set social-network other turtles with
+;    [ 
+ ;     xcor > ([xcor] of myself - social-network-age-range) and
+  ;    xcor < ([xcor] of myself + social-network-age-range) and
+   ;   ycor > ([ycor] of myself - social-network-angle-range) and
+    ;  ycor < ([ycor] of myself + social-network-angle-range)
+     ;]
 end
 
 ; Marriage submodel
@@ -128,31 +171,42 @@ to marry
  if xcor < min-marriage-age [stop]
  
  ; Identify the social network
-  set social-network other turtles with
-    [ 
-      xcor > ([xcor] of myself - social-network-age-range) and
-      xcor < ([xcor] of myself + social-network-age-range) and
-      ycor > ([ycor] of myself - social-network-angle-range) and
-      ycor < ([ycor] of myself + social-network-angle-range)
-     ]
+  
+  set-social-network
+  
+  ;set social-network other turtles with
+  ;  [ 
+  ;    xcor > ([xcor] of myself - social-network-age-range) and
+  ;    xcor < ([xcor] of myself + social-network-age-range) and
+  ;    ycor > ([ycor] of myself - social-network-angle-range) and
+  ;    ycor < ([ycor] of myself + social-network-angle-range)
+  ;   ]
 
   ; Test output:   
     file-type count social-network      file-type ","
   
   ; Evaluate the married fraction of social network
-   let married-fraction (count social-network with [is-married?]) / (count social-network)
-
+   
+   let married-fraction 0
+   
+   if count social-network > 0
+     
+   [set married-fraction ((count social-network with [is-married?]) / (count social-network))] ; causes error when social-network empty
+   
+   
   ; Evaluate social pressure
    let Z -5.4925 + (10.985 * married-fraction)
    let social-pressure (exp Z) / (1 + exp Z)
+
+   ;show ( word z "," social-pressure)
 
  ; Test output:   
       file-type married-fraction          file-type "," 
       file-type social-pressure           file-type ","
 
    ; Now, decide whether to try to marry
-   if random-float 1.0 > married-fraction [stop]
-
+   ;if random-float 1.0 > married-fraction [stop] ; this should be social pressure
+   if random-float 1.0 > social-pressure [stop] 
   
    ; Identify a partner if there is one
    let potential-partners social-network with
@@ -162,7 +216,7 @@ to marry
       is-married? = false
     ]
     
-    let my-spouse one-of potential-partners
+    set my-spouse one-of potential-partners
     if my-spouse = nobody [stop]
     
     ; Reset marriage status of self and new spouse
@@ -173,10 +227,11 @@ to marry
      [
        set is-married? true
        set color green
+       set my-spouse myself
      ]
      
     ; Get spouse's social angle (for childbirth)
-    set my-spouses-social-angle [ycor] of my-spouse
+    ;set my-spouses-social-angle [ycor] of my-spouse
 
   
 end
@@ -192,8 +247,10 @@ to reproduce
  if number-of-births > count moms [set number-of-births count moms]
  
  ; Pick which moms have babies and create the kids
+ 
+ 
  ask n-of number-of-births moms  
-   [
+   [     
      hatch 1
        [
          set xcor 0
@@ -203,10 +260,39 @@ to reproduce
           [set sex "M"]
           [set sex "F"]
 
-         ; The babies get a social angle between their parents'
-         let angle-difference ([my-spouses-social-angle] of myself) - ([ycor] of myself)
-         set ycor [ycor] of myself + random-float angle-difference
-       ]
+         ; The babies get a social angle between their parents' ; this bit isn't working, as it doesn't take into account "ring" behavior
+         
+         let angle1 [ycor] of my-spouse
+         let angle2 ycor
+         
+         set my-father my-spouse
+         set my-mother myself
+         set my-spouse nobody
+                  
+         if angle1 > 180 [set angle1 (angle1 - 360)]
+         if angle2 > 180 [set angle2 (angle2 - 360)]
+  
+         
+         ;let angle-difference ([my-spouses-social-angle] of myself) - ([ycor] of myself)
+         let angle-difference angle1 - angle2
+        
+         
+         
+         set ycor angle2 + random-float angle-difference
+         
+         set-social-network
+         
+         
+       
+   ;    set social-network other turtles with
+   ; [ 
+   ;   xcor > ([xcor] of myself - social-network-age-range) and
+   ;   xcor < ([xcor] of myself + social-network-age-range) and
+   ;   ycor > ([ycor] of myself - social-network-angle-range) and
+   ;   ycor < ([ycor] of myself + social-network-angle-range)
+   ;  ]
+       
+       ];end hatch
     ]
     
 end
@@ -228,21 +314,143 @@ end
 ; has its label set to "me"
 to tag-network
   set label "me"
-  ask social-network 
+  ask social-network
    [
      set label sex
    ]
   
 end 
+
+
+to setup_mary
+; Now, decide whether to try to marry
+   if random-float 1.0 > 0.1 [stop]
+
+  set-social-network
+ 
+  ; set social-network other turtles with
+   ; [ 
+   ;   xcor > ([xcor] of myself - social-network-age-range) and
+    ;  xcor < ([xcor] of myself + social-network-age-range) and
+     ; ycor > ([ycor] of myself - social-network-angle-range) and
+      ;ycor < ([ycor] of myself + social-network-angle-range)
+   ;  ]
+
+   ; Identify a partner if there is one
+   let potential-partners social-network with
+    [ 
+      sex != [sex] of myself and
+      xcor >= min-marriage-age and
+      is-married? = false
+    ]
+    
+    set my-spouse one-of potential-partners
+    if my-spouse = nobody [stop]
+    
+    ; Reset marriage status of self and new spouse
+    set is-married? true
+    set color green
+    
+    ask my-spouse 
+     [
+       set is-married? true
+       set color green
+       set my-spouse myself 
+     ]
+     
+    ; Get spouse's social angle (for childbirth)
+    ;set my-spouses-social-angle [ycor] of my-spouse
+end
+
+
+to set-social-network ; old method wasn't working, need to manually code wrapping 360 degrees
+
+
+ifelse
+((ycor - social-network-angle-range) < 0 or
+(ycor  + social-network-angle-range) > 360 )
+
+;if the range needs to be split into 2 segments
+[;set label "split"
+      let ymin1 0
+      let ymax1 0
+      let ymin2 0
+      let ymax2 0
+  
+  
+  if(ycor - social-network-angle-range) < 0 
+      [set ymin1 (360 + ( ycor - social-network-angle-range) )
+       set ymax1 360
+       set ymin2 0
+       set ymax2 ycor + social-network-angle-range
+       ]
+  
+  if(ycor + social-network-angle-range) > 360
+      [set ymin1 ycor - social-network-angle-range 
+       set ymax1 360
+       set ymin2 0
+       set ymax2 ((ycor + social-network-angle-range) - 360)
+       ]
+  
+  
+   set social-network other turtles with
+        [ 
+          (xcor > ([xcor] of myself - social-network-age-range) and
+          xcor < ([xcor] of myself + social-network-age-range) and
+          ycor > ymin1 and
+          ycor < ymax1)
+            
+        
+        
+        OR
+         
+         ( xcor > ([xcor] of myself - social-network-age-range) and
+          xcor < ([xcor] of myself + social-network-age-range) and
+          ycor > ymin2 and
+          ycor < ymax2 )
+            
+        
+        ]
+  
+      ]
+
+;if the range is just one bit
+[set social-network other turtles with
+    [ 
+      xcor > ([xcor] of myself - social-network-age-range) and
+      xcor < ([xcor] of myself + social-network-age-range) and
+      ycor > ([ycor] of myself - social-network-angle-range) and
+      ycor < ([ycor] of myself + social-network-angle-range)
+     ]]
+
+
+
+
+end
+
+to link-families
+
+if  my-father != nobody [create-link-to my-father]
+if my-mother != nobody [create-link-to my-mother]
+
+
+
+end
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-377
-10
-622
-1014
+444
+23
+689
+594
 -1
 -1
-2.705
+1.5
 1
 10
 1
@@ -330,6 +538,75 @@ false
 "" ""
 PENS
 "default" 1.0 1 -16777216 true "" ""
+
+SLIDER
+33
+367
+234
+400
+social-network-angle-range
+social-network-angle-range
+0
+360
+3
+1
+1
+NIL
+HORIZONTAL
+
+PLOT
+966
+207
+1166
+357
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if (any? turtles) [plot mean [ycor] of turtles]"
+"pen-1" 1.0 0 -7500403 true "" "if (any? turtles) [plot mean [xcor] of turtles]"
+
+PLOT
+642
+236
+842
+386
+plot 2
+NIL
+NIL
+0.0
+360.0
+0.0
+25.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "histogram [ycor] of turtles"
+"pen-1" 1.0 0 -7500403 true "" "histogram [ycor] of turtles with [is-married?]"
+"pen-2" 1.0 0 -2674135 true "" "histogram [ycor] of turtles with [color = blue]"
+
+SLIDER
+58
+412
+250
+445
+social-network-age-range
+social-network-age-range
+0
+60
+4
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 # MARRIAGE AGE MODEL
@@ -719,7 +996,7 @@ Polygon -7566196 true true 270 75 225 30 30 225 75 270
 Polygon -7566196 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0RC2
+NetLogo 5.0.5
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
