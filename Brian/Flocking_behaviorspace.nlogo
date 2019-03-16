@@ -25,7 +25,12 @@ to go
 end
 
 to flock  ;; turtle procedure
-  find-flockmates
+  
+  ifelse one-flockmate?
+[find-flockmate]
+[find-flockmates]
+  
+  
   if any? flockmates
     [ find-nearest-neighbor
       ifelse distance nearest-neighbor < minimum-separation
@@ -34,9 +39,17 @@ to flock  ;; turtle procedure
           cohere ] ]
 end
 
+
 to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
 end
+
+to find-flockmate  ;; turtle procedure
+  set flockmates other turtles in-radius vision
+  set flockmates flockmates with-min [distance myself]
+end
+
+
 
 to find-nearest-neighbor ;; turtle procedure
   set nearest-neighbor min-one-of flockmates [distance myself]
@@ -256,6 +269,17 @@ minimum-separation
 1
 patches
 HORIZONTAL
+
+SWITCH
+50
+357
+190
+390
+one-flockmate?
+one-flockmate?
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -671,6 +695,37 @@ repeat 200 [ go ]
     </enumeratedValueSet>
     <enumeratedValueSet variable="max-separate-turn">
       <value value="1.5"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="single_flockmate" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="500"/>
+    <metric>count turtles with[any? flockmates]</metric>
+    <metric>mean [count flockmates] of turtles</metric>
+    <metric>mean [min [distance myself] of other turtles] of turtles</metric>
+    <metric>standard-deviation [heading] of turtles</metric>
+    <enumeratedValueSet variable="max-cohere-turn">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="vision">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-align-turn">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minimum-separation">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population">
+      <value value="300"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-separate-turn">
+      <value value="1.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="one-flockmate?">
+      <value value="true"/>
+      <value value="false"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>

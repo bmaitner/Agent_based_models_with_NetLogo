@@ -4,7 +4,7 @@
 breed [seed seeds]
 breed [cactus cacti]
 cactus-own [age]
-
+globals [density_dependence]
 
 to setup
 ca
@@ -26,6 +26,13 @@ create-seed n_seeds [
 end
 
 to go
+
+;Code to turn on/off density dependence.  To make density dependence adjustable, add a button to the main window
+
+ifelse density_dependence?
+[set density_dependence 1]
+[set density_dependence 0]
+
 
 ask seed[ if count cactus-here > 0 OR (count patches in-radius density_dependence WITH [count cactus-here > 0] > 0)[die]]
 
@@ -122,7 +129,7 @@ percent_cover
 percent_cover
 0
 100
-16
+25
 1
 1
 NIL
@@ -130,9 +137,9 @@ HORIZONTAL
 
 BUTTON
 27
-243
+240
 90
-276
+273
 NIL
 go
 T
@@ -154,7 +161,7 @@ n_seeds
 n_seeds
 0
 100
-50
+15
 1
 1
 NIL
@@ -186,7 +193,7 @@ p_survival_no_nurse
 p_survival_no_nurse
 0
 100
-2
+70
 1
 1
 NIL
@@ -221,39 +228,36 @@ p_survival_with_nurse
 p_survival_with_nurse
 0
 100
-100
+70
 1
 1
 NIL
 HORIZONTAL
 
-SLIDER
-26
-206
-198
-239
-density_dependence
-density_dependence
+SWITCH
+27
+207
+201
+240
+density_dependence?
+density_dependence?
 0
-10
-3
 1
-1
-NIL
-HORIZONTAL
+-1000
 
 @#$#@#$#@
+
 ## WHAT IS IT?
 
-A quick simulation designed to show different expectations related to the nurse plant hypothesis.
+A simple simulation designed to show different expectations related to the nurse plant hypothesis.
 
 ## HOW IT WORKS
 
-Seeds (black dots) are scattered throughout the landscape.  Seeds falling on a green patch are considered to be in the shelter of a nurse plant and will survive and germinate if the patch is not occupied by another cactus.  Cacti begin reproducing after 20 time steps and produce an amount of seed proportional to their age.  Seeds are scattered randomly within a radius of 5. Cacti die at age 100.
+Seeds (black dots) are scattered throughout the landscape.  Seeds falling on a green patch are considered to be in the shelter of a nurse plant and will survive and germinate with the probability *p_surival_with_nurse* if the patch is not occupied by another cactus.  Seeds falling on a yellow patch are not in the shelter of a nurse plant and will survive and germinate with the probability *p_surival_no_nurse*. If density_dependence? is turned on, seeds will not survive if there is another cactus within a 1 unit radius.  Cacti begin reproducing after 20 time steps and produce an amount of seeds proportional to their age.  Seeds are scattered randomly within a radius of 5. Cacti die at age 100.
 
 ## HOW TO USE IT
 
-Percent cover refers to the likelihood of patches containing a nurse plant (the green ones), and so might not be exactly equal to the actual percent cover.  Probability of survival refers to the probability of a seed surviving and developing.  We assume that all adult cacti survive until the age of 100 ticks.
+*Percent cover* refers to the likelihood of patches containing a nurse plant (the green ones), and so might not be exactly equal to the actual percent cover.  *Probability of survival* refers to the probability of a seed surviving and developing.  We assume that all adult cacti survive until the age of 100 ticks.
 
 ## THINGS TO NOTICE
 
@@ -261,24 +265,25 @@ Percent cover refers to the likelihood of patches containing a nurse plant (the 
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+- How does the proportion of seeds in association with a nurse plant change if you set the probability of survival without a nurse plant to zero?  
+- What if you set it equal to the probability of survival with a nurse plant?  
+- Somewhere in between?
+- How do things change when you vary the percent cover and re-run the model?
+
+## IMPORTANT BIOLOGICAL FEATURES
+- Density dependence
+- Limited dispersal distance
+- Changes in reproductive output during development
 
 ## EXTENDING THE MODEL
 
-Adult cactus survival should not be a fixed 100 years, which gives weird pulse dynamics. Nurse plants should have separate dynamics and be coded by turtles, not patches.
-
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Ideally, adult cactus survival should not be a fixed 100 years, but be probabilisitc. Nurse plants should have separate dynamics.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Brian Maitner and Ryan Ruboyianes
+
+https://github.com/bmaitner/Agent_based_models_with_NetLogo/blob/master/Brian/nurse_plant_demo.nlogo
 @#$#@#$#@
 default
 true
