@@ -283,9 +283,7 @@ Ideally, adult cactus survival should not be a fixed 100 years, but be probabili
 
 Brian Maitner and Ryan Ruboyianes
 
-"https://github.com/bmaitner/Agent_based_models_with_NetLogo/blob/master/Brian/nurse_plant_demo.nlogo"
-
-A code available [here](https://github.com/bmaitner/Agent_based_models_with_NetLogo/blob/master/Brian/nurse_plant_demo.nlogo).
+Code available [here](https://github.com/bmaitner/Agent_based_models_with_NetLogo/blob/master/Brian/nurse_plant_demo.nlogo).
 @#$#@#$#@
 default
 true
