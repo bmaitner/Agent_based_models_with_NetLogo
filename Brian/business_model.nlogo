@@ -26,8 +26,12 @@ ask patches [
 crt n_turtles
 [set W 0
   move-to one-of patches with [not any? turtles-here]
-  ]
+  create-links-to n-of number-of-links other turtles
+ ]
 
+
+;setup-output ;this was used to check the calculation of the utility
+;output-data
 end
 
 
@@ -43,7 +47,9 @@ ask turtles [accounting]
 ;stop after 25 years
 tick
 
-if ticks >= 25 [stop]
+;output-data
+
+if ticks >= 25 [stop output-data]
 
 
 end
@@ -52,8 +58,33 @@ end
 to choose_investment
 
 ; make agentset of potential destinations
-let potential-destinations neighbors with [not any? turtles-here]
-set potential-destinations (patch-set potential-destinations patch-here)
+
+
+;Old code using neighbors rather than sensing-radius to determine potential investments
+;let potential-destinations neighbors with [not any? turtles-here]
+;set potential-destinations (patch-set potential-destinations patch-here)
+
+
+let potential-destinations patches in-radius
+    sensing-radius with [not any? turtles-here]
+ set potential-destinations
+    (patch-set potential-destinations patch-here)
+
+;; This code uses links to share knowledge, but only about neighbors.
+;; This has been replaces with the code below where knowledge is shared based on patches in-radius sensing-radius
+;set potential-destinations
+;  (patch-set 
+;(potential-destinations)
+;    ([neighbors with [not any? turtles-here]] of out-link-neighbors)
+;)
+
+set potential-destinations
+  (patch-set 
+(potential-destinations)
+    ([patches in-radius sensing-radius with [not any? turtles-here]] of out-link-neighbors)
+)
+
+
 
 ;examine nearby patches
 ;move to best investment
@@ -96,6 +127,58 @@ to display-patch-F
 ask patches [set pcolor scale-color red F 0.01 0.1]
 
 end  
+
+to setup-output
+
+if (file-exists? "business_test_output.csv")
+ [
+   carefully
+  [ file-delete "business_test_output.csv"]
+  [print error-message] 
+   ]
+
+file-open "business_test_output.csv"
+file-type "id,"
+file-type "wealth,"
+file-type "p,"
+file-type "f,"
+file-type "utility,"
+file-print "tick," ;file print adds end of line
+file-close
+
+
+end
+
+
+
+to output-data
+file-open "business_test_output.csv"
+
+ask turtles[
+
+file-type (word who ",")
+file-type (word W ",")
+file-type (word P ",")
+file-type (word F ",")
+file-type (word U W P F ",")
+file-print ticks ; Note that file-print add end of line
+]
+
+file-close
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -206,6 +289,54 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+918
+175
+1118
+325
+Utility over time
+tick
+Utility
+0.0
+25.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if any? turtles [plot mean [U W P F ] of turtles]"
+
+SLIDER
+18
+199
+190
+232
+sensing-radius
+sensing-radius
+0
+10
+10
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+343
+203
+376
+number-of-links
+number-of-links
+0
+20
+9
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -554,6 +685,39 @@ NetLogo 5.0.5
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="sensing-radius-vs-wealth" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean [W] of turtles</metric>
+    <steppedValueSet variable="sensing-radius" first="0" step="1" last="10"/>
+    <enumeratedValueSet variable="n_turtles">
+      <value value="10"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="number-of-links-vs-wealth" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean [W] of turtles</metric>
+    <enumeratedValueSet variable="sensing-radius">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="number-of-links" first="0" step="1" last="9"/>
+    <enumeratedValueSet variable="n_turtles">
+      <value value="10"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="number-of-links-vs-radius-vs-wealth" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean [W] of turtles</metric>
+    <steppedValueSet variable="sensing-radius" first="0" step="1" last="10"/>
+    <steppedValueSet variable="number-of-links" first="0" step="1" last="9"/>
+    <enumeratedValueSet variable="n_turtles">
+      <value value="10"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
