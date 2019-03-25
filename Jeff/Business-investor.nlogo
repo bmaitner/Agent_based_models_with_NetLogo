@@ -1,98 +1,176 @@
-; Business investors model
-patches-own[p f]
-turtles-own[w]
+;Business investors model
+patches-own[P F]
+turtles-own[W]
+globals[output-file-name output-utility-check]
+
 
 to setup
-  ca
 
-  ; ##### patches #####
-  ; each patch has p 1000 to 10000 (random, uniform)
-  ; each patch has f between 0.01 and 0.1 (random, uniform)
-  ask patches [
-    set p random 9000 + 1000
-    set f random-float 0.09 + 0.01
-    set pcolor scale-color green p 1000 10000
+ca
+reset-ticks
+set output-utility-check False
+
+;patches
+   ;P: 1,000 to 10,000
+   ;  F: 0.01 to 0.1
+   ;assign random, uniform values in those ranges
+
+ask patches [
+  set P random 9000 + 1000
+  set F random-float .09 + .01
+ set pcolor scale-color green P 1000 10000
+
   ]
 
-  ; ##### turtles #####
-  ; each turtle starts with w = 0
-  ; each turtle is randomly assgined to empty patch
-  crt n_turtles
-  [set w 0
+  ;turtles
+  ;W=0
+
+  crt n_turtles [
+    ; set initial value of wealth to 0
+    set W 0
+    ; assign to random, empty patch
     move-to one-of patches with [not any? turtles-here]
+    ; create links with other turtles
+    create-links-to n-of number-of-links other turtles
   ]
+
+  if output-utility-check [
+    set output-file-name "utility-check.csv"
+    setup-output-file output-file-name
+    output-data output-file-name
+  ]
+
 end
 
-; On each tick:
-; 1. Investor repositioning
-;    move to patch based on profit risk/tradeoff
-; 2. Accounting
-;    set w = p + w
-;    if unif < f, w = 0 (f is chance of failure)
-; 3. Report
 to go
-  ask turtles [choose_investment]
 
-  ask turtles [accounting]
+;choose_investment
+ask turtles [choose_investment]
 
-  ;reporting
-  ; stop after 25 years
+;accounting
+
+ask turtles [accounting]
+
+;stop after 25 years
+tick
+
+  if output-utility-check [ output-data output-file-name ]
+
+  if ticks >= 25 [stop]
+
+
 end
+
 
 to choose_investment
-  ; examine nearby patches
-  ; move to best investment
-  ; u = (w + tp)(1 - f)^t
-  ; if we set t = 1 (one time step):
-  ; u = (w + p)(1 - f)
-  let potential-destinations neighbors with [not any? turtles-here]
-  set potential-destinations (patch-set potential-destinations patch-here)
 
-  ; move the turtle
-  move-to max-one-of potential-destinations [ u ([w] of myself) p f ]
-end
+; make agentset of potential destinations
+  ; original approach
+  ; let potential-destinations neighbors with [not any? turtles-here]
+  ; set potential-destinations (patch-set potential-destinations patch-here)
 
-to-report u [wealth profit failure]
-  let utility (wealth + profit) * (1 - failure)
-  report utility
+  ; new approach, allowing agents to move greater distances
+  let potential-destinations
+    patches in-radius sensing-radius with [not any? turtles-here]
+  set potential-destinations
+    (patch-set potential-destinations patch-here)
+  ; look to network to see best options
+  set potential-destinations
+    (patch-set
+      (potential-destinations)
+      ([neighbors with [not any? turtles-here]] of out-link-neighbors)
+    )
+
+;examine nearby patches
+;move to best investment
+  ;U = (W+TP)(1-F)^T
+  ; Assume T = 1, then: U = (W+P)(1-F)
+
+
+move-to max-one-of potential-destinations [ U ([W] of myself) P F ]
+
+
 end
 
 to accounting
-  ; w = p + w
-  ; if random uniform less than f, set w = 0
-  set w p + w
-  if random-float 1 < f [
-    set w 0
-  ]
+;W = P + W
+;if random uniform less than F, W = 0
+
+set W P + W
+
+if random-float 1 < F [set W 0]
+
 end
 
-to display-patch-p
-  ask patches[
-    set pcolor scale-color green p 1000 10000
-  ]
+
+to-report U [wealth profit failure]
+  ;U = (W+TP)(1-F)^T
+  ; Assume T = 1, then: U = (W+P)(1-F)
+
+let utility (wealth + profit) * (1 - failure)
+
+report utility
 end
 
-to display-patch-f
-  ask patches[
-    set pcolor scale-color red f 0.01 0.1
+; Write output with Utility, Profit, Wealth, and Failure
+
+to setup-output-file [filename]
+  ; delete the file if it already exists
+  if (file-exists? filename)
+  [ carefully
+    [
+      file-delete filename
+    ]
+  [ print error-message ]
   ]
+  ; add header row
+  file-open filename
+  file-type "id,"
+  file-type "tick,"
+  file-type "U,"
+  file-type "P,"
+  file-type "W,"
+  file-print "F"
+  file-close
+end
+
+to output-data [filename]
+  ; write data for each turtle to output file
+  file-open filename
+  ask turtles [
+    file-type (word who ",")
+    file-type (word ticks ",")
+    file-type (word ( U W P F ) ",")
+    file-type (word P ",")
+    file-type (word W ",")
+    file-print (word F ",")
+  ]
+  file-close
+end
+
+to display-patch-P
+  ask patches [set pcolor scale-color green P 1000 10000]
+end
+
+to display-patch-F
+  ask patches [set pcolor scale-color red F 0.01 0.1]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+428
 10
-725
-526
+908
+491
 -1
 -1
-13.0
+12.103
 1
 10
 1
 1
 1
 0
-1
+0
 1
 1
 -19
@@ -106,10 +184,10 @@ ticks
 30.0
 
 BUTTON
-38
-45
-111
-78
+16
+59
+79
+92
 NIL
 setup
 NIL
@@ -123,13 +201,13 @@ NIL
 1
 
 BUTTON
-127
-46
-190
-79
+17
+109
+80
+142
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -140,13 +218,13 @@ NIL
 1
 
 SLIDER
-26
-95
-198
-128
+17
+158
+189
+191
 n_turtles
 n_turtles
-0
+1
 20
 10.0
 1
@@ -155,12 +233,12 @@ NIL
 HORIZONTAL
 
 BUTTON
-35
-170
-160
-203
-Display Profit
-display-patch-p
+17
+200
+134
+233
+NIL
+display-patch-P
 NIL
 1
 T
@@ -172,12 +250,12 @@ NIL
 1
 
 BUTTON
-38
-214
-173
-247
-Display Failure
-display-patch-f
+17
+243
+134
+276
+NIL
+display-patch-F
 NIL
 1
 T
@@ -187,6 +265,54 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+5
+318
+205
+468
+Utility through time
+Time
+Utility
+0.0
+25.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if any? turtles [plot mean [U W P F] of turtles]"
+
+SLIDER
+203
+161
+375
+194
+sensing-radius
+sensing-radius
+0
+10
+10.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+217
+227
+389
+260
+number-of-links
+number-of-links
+0
+n_turtles - 1
+9.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -534,6 +660,27 @@ NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="sensing-radius-impact" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean [W] of turtles</metric>
+    <enumeratedValueSet variable="n_turtles">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="sensing-radius" first="0" step="1" last="10"/>
+  </experiment>
+  <experiment name="network-size-effect" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean [W] of turtles</metric>
+    <steppedValueSet variable="number-of-links" first="0" step="1" last="9"/>
+    <enumeratedValueSet variable="n_turtles">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="sensing-radius" first="0" step="1" last="10"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
